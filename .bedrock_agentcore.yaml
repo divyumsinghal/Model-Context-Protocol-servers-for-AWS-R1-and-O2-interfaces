@@ -1,0 +1,35 @@
+default_agent: mcp_server_r1
+agents:
+  mcp_server_r1:
+    name: mcp_server_r1
+    entrypoint: /home/sagemaker-user/mcp_server.py
+    platform: linux/arm64
+    container_runtime: none
+    aws:
+      execution_role: arn:aws:iam::009920886900:role/agentcore-mcp_server_r1-role
+      execution_role_auto_create: false
+      account: 009920886900
+      region: us-east-1
+      ecr_repository: 009920886900.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-mcp_server_r1
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: MCP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: mcp_server_r1-8i8EmDAMQj
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:009920886900:runtime/mcp_server_r1-8i8EmDAMQj
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-mcp_server_r1-builder
+      execution_role: arn:aws:iam::009920886900:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-bdc1944e9e
+      source_bucket: bedrock-agentcore-codebuild-sources-009920886900-us-east-1
+    authorizer_configuration:
+      customJWTAuthorizer:
+        allowedClients:
+        - 7e28pp5ciabvagumrcfi396u9l
+        discoveryUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_PiPJtq3q6/.well-known/openid-configuration
+    request_header_configuration: null
+    oauth_configuration: null
