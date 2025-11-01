@@ -15,18 +15,18 @@ async def main():
     
     try:
         ssm_client = boto3.client('ssm', region_name=region)
-        agent_arn_response = ssm_client.get_parameter(Name='/mcp_server/r1/runtime/agent_arn')
+        agent_arn_response = ssm_client.get_parameter(Name='/mcp_server/o2/runtime/agent_arn')
         agent_arn = agent_arn_response['Parameter']['Value']
         print(f"Retrieved Agent ARN: {agent_arn}")
 
         secrets_client = boto3.client('secretsmanager', region_name=region)
-        response = secrets_client.get_secret_value(SecretId='mcp_server/r1/cognito/credentials')
+        response = secrets_client.get_secret_value(SecretId='mcp_server/o2/cognito/credentials')
         secret_value = response['SecretString']
         parsed_secret = json.loads(secret_value)
 
         cognito_client = boto3.client('cognito-idp', region_name=region)   
         auth_response = cognito_client.initiate_auth(
-                    ClientId=ssm_client.get_parameter(Name='/mcp_server/r1/runtime/client_id')["Parameter"]["Value"],
+                    ClientId=ssm_client.get_parameter(Name='/mcp_server/o2/runtime/client_id')["Parameter"]["Value"],
                     AuthFlow='USER_PASSWORD_AUTH',
                     AuthParameters={
                         'USERNAME': 'testuser',
@@ -72,10 +72,10 @@ async def main():
                 print("=" * 50)
                     
                 try:
-                    print("\n👋 Testing R1 tool...")
+                    print("\n👋 Testing O2 tool...")
                     search_result = await session.call_tool(
-                        name="get_rapps",
-                        arguments={"question": "Tell me about the rApps that you see"}
+                        name="get_resource_pools",
+                        arguments={"question": "Can you tell me about my resource pools?"}
                     )
                     print(f"   Result: {search_result.content[0].text}")
                 except Exception as e:
