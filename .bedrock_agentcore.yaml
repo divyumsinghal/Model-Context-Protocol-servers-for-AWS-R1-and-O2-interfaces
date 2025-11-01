@@ -1,4 +1,4 @@
-default_agent: mcp_server_o2
+default_agent: oran_agent_memory
 agents:
   mcp_server_r1:
     name: mcp_server_r1
@@ -64,5 +64,71 @@ agents:
         allowedClients:
         - 3eoc63um0qoetkb63uha70klo4
         discoveryUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7W7zsK1bV/.well-known/openid-configuration
+    request_header_configuration: null
+    oauth_configuration: null
+  oran_agent:
+    name: oran_agent
+    entrypoint: /home/sagemaker-user/agent.py
+    platform: linux/arm64
+    container_runtime: none
+    aws:
+      execution_role: arn:aws:iam::009920886900:role/agentcore-oran_agent-role
+      execution_role_auto_create: false
+      account: 009920886900
+      region: us-east-1
+      ecr_repository: 009920886900.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-oran_agent
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: oran_agent-rwCrCUG2O0
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:009920886900:runtime/oran_agent-rwCrCUG2O0
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-oran_agent-builder
+      execution_role: arn:aws:iam::009920886900:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-2221887b5b
+      source_bucket: bedrock-agentcore-codebuild-sources-009920886900-us-east-1
+    authorizer_configuration:
+      customJWTAuthorizer:
+        allowedClients:
+        - 50f8gtvucbk7c9u71fc2fvjumu
+        discoveryUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Rf91ozZzE/.well-known/openid-configuration
+    request_header_configuration: null
+    oauth_configuration: null
+  oran_agent_memory:
+    name: oran_agent_memory
+    entrypoint: /home/sagemaker-user/memory_agent.py
+    platform: linux/arm64
+    container_runtime: none
+    aws:
+      execution_role: arn:aws:iam::009920886900:role/agentcore-oran_agent_memory-role
+      execution_role_auto_create: false
+      account: 009920886900
+      region: us-east-1
+      ecr_repository: 009920886900.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-oran_agent_memory
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: oran_agent_memory-mMt27gGOxE
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:009920886900:runtime/oran_agent_memory-mMt27gGOxE
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-oran_agent_memory-builder
+      execution_role: arn:aws:iam::009920886900:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-ecc2044bc0
+      source_bucket: bedrock-agentcore-codebuild-sources-009920886900-us-east-1
+    authorizer_configuration:
+      customJWTAuthorizer:
+        allowedClients:
+        - 6do5qavfcsu70ad633u3tpvm8s
+        discoveryUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_pNa2GeOE7/.well-known/openid-configuration
     request_header_configuration: null
     oauth_configuration: null

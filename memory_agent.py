@@ -7,8 +7,68 @@ from mcp.client.streamable_http import streamablehttp_client
 from strands.tools.mcp.mcp_client import MCPClient
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands.models import BedrockModel
+# Add memory imports
+from bedrock_agentcore.memory import MemoryClient
+from botocore.exceptions import ClientError
+from strands.hooks import AgentInitializedEvent, HookProvider, HookRegistry, MessageAddedEvent
+import time
 
 app = BedrockAgentCoreApp()
+
+class MemoryHookProvider(HookProvider):
+    def __init__(self, memory_client: MemoryClient, memory_id: str):
+        self.memory_client = memory_client
+        self.memory_id = memory_id
+    
+    def on_agent_initialized(self, event: AgentInitializedEvent):
+        try:
+            actor_id = event.agent.state.get("actor_id")
+            session_id = event.agent.state.get("session_id")
+            
+            if not actor_id or not session_id:
+                return
+            
+            recent_turns = self.memory_client.get_last_k_turns(
+                memory_id=self.memory_id,
+                actor_id=actor_id,
+                session_id=session_id,
+                k=5
+            )
+            
+            if recent_turns:
+                context_messages = []
+                for turn in recent_turns:
+                    for message in turn:
+                        role = message['role']
+                        content = message['content']['text']
+                        context_messages.append(f"{role}: {content}")
+                
+                context = "\n".join(context_messages)
+                event.agent.system_prompt += f"\n\nRecent conversation:\n{context}"
+                print(f"✅ Loaded {len(recent_turns)} conversation turns")
+                
+        except Exception as e:
+            print(f"Memory load error: {e}")
+    
+    def on_message_added(self, event: MessageAddedEvent):
+        try:
+            messages = event.agent.messages
+            actor_id = event.agent.state.get("actor_id")
+            session_id = event.agent.state.get("session_id")
+
+            if messages[-1]["content"][0].get("text"):
+                self.memory_client.create_event(
+                    memory_id=self.memory_id,
+                    actor_id=actor_id,
+                    session_id=session_id,
+                    messages=[(messages[-1]["content"][0]["text"], messages[-1]["role"])]
+                )
+        except Exception as e:
+            print(f"Memory save error: {e}")
+    
+    def register_hooks(self, registry: HookRegistry):
+        registry.add_callback(MessageAddedEvent, self.on_message_added)
+        registry.add_callback(AgentInitializedEvent, self.on_agent_initialized)
 
 class StrandsMCPClient:
     def __init__(self):
@@ -59,12 +119,62 @@ try:
 except Exception as e:
     print(f"Failed to get O2 tools: {e}")
 
+# Create or get existing memory for the agent
+memory_id = None
+memory_client = None
+try:
+    memory_client = MemoryClient(region_name="us-east-1")
+    
+    # First, check if memory already exists
+    existing_memory = None
+    print(memory_client.list_memories())
+    for memory in memory_client.list_memories():
+        if memory.get('name', '').startswith("ORANAgentMemory"):
+            existing_memory = memory
+            break
+    
+    if existing_memory:
+        memory_id = existing_memory.get('id')
+        print(f"Using existing memory: {memory_id}")
+    else:
+        print("Creating new memory... this may take 2-3 minutes")
+        start_time = time.time()
+        
+        memory = memory_client.create_memory_and_wait(
+            name="ORANAgentMemory",
+            strategies=[
+                {
+                    "semanticMemoryStrategy": {
+                        "name": "ORANTracker",
+                        "description": "Tracks rApp lifecycle, deployments, and O-Cloud infrastructure changes",
+                        "namespaces": ["oran/{actorId}/operations"]
+                    }
+                }
+            ],
+            description="Memory for O-RAN SMO agent operations",
+            event_expiry_days=90
+        )
+        
+        memory_id = memory.get("id")
+        elapsed_time = time.time() - start_time
+        print(f"✅ Created memory: {memory_id} (took {elapsed_time:.0f} seconds)")
+        
+except Exception as e:
+    print(f"❌ Memory error: {e}")
+    print("Agent will run without memory")
+
 model_id = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 model = BedrockModel(model_id=model_id)
 
+# Create agent with memory hooks and state
 agent = Agent(
     model=model,
     tools=all_tools,
+    hooks=[MemoryHookProvider(memory_client, memory_id)] if memory_id else [],
+    state={
+        "actor_id": "oran_operator_001",
+        "session_id": f"oran_session_{int(time.time())}"
+    },
     system_prompt="""You are an advanced O-RAN SMO Planner Agent supporting O2 and R1 interface use cases from O-RAN specifications.
 
 SUPPORTED USE CASES:

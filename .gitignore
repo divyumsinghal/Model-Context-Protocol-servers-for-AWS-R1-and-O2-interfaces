@@ -12,3 +12,5 @@ virtual_documents
 .sagemaker_sql_editor_api_cache/
 user-default-efs
 .gitconfig
+.bedrock_agentcore.yaml
+.lesshst
