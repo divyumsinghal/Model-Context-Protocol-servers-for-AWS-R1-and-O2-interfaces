@@ -11,3 +11,4 @@ virtual_documents
 .virtual_documents/
 .sagemaker_sql_editor_api_cache/
 user-default-efs
+.gitconfig
