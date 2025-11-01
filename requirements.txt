@@ -1,0 +1,11 @@
+boto3>=1.35.50
+mcp>=1.0.0
+asyncio-mqtt>=0.16.0
+strands-agents
+strands-agents-tools
+uv
+starlette
+uvicorn
+setuptools
+bedrock-agentcore
+bedrock-agentcore-starter-toolkit==0.1.14
